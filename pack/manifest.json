@@ -1,0 +1,29 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Continuity BE Tiles",
+    "description": "Connected-texture tiles for the Continuity BE native mod",
+    "uuid": "ec18ec3e-d237-5682-8632-3c709157dece",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "1e886d9e-643d-55da-918c-03bcf513a1a5",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}

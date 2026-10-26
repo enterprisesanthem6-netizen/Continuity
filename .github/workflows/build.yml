@@ -1,0 +1,74 @@
+name: Build Continuity BE (arm64-v8a)
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Pillow
+        run: python3 -m pip install --break-system-packages pillow
+      - name: Host tests
+        run: bash tests/run_tests.sh
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Android NDK
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r28c
+          add-to-path: false
+
+      - name: Install Ninja
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      - name: Configure
+        run: |
+          cmake -S . -B out -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE=${{ steps.setup-ndk.outputs.ndk-path }}/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-26 \
+            -DANDROID_STL=c++_static
+
+      - name: Build
+        run: cmake --build out --parallel
+
+      - name: Strip
+        run: ${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip --strip-all out/libcontinuitybe.so
+
+      - name: Package
+        run: |
+          mkdir -p build dist
+          cp out/libcontinuitybe.so build/
+          python3 scripts/package.py --root . --lib build/libcontinuitybe.so --out dist
+
+      - name: Upload levipack
+        uses: actions/upload-artifact@v4
+        with:
+          name: ContinuityBE-levipack
+          path: dist/ContinuityBE.levipack
+
+      - name: Upload resource pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: ContinuityBE-mcpack
+          path: dist/ContinuityBE.mcpack
+
+      - name: Upload bare library
+        uses: actions/upload-artifact@v4
+        with:
+          name: ContinuityBE-arm64-v8a
+          path: |
+            out/libcontinuitybe.so
+            manifest.json
